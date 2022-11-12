@@ -3,9 +3,9 @@ package com.honeypot.domain.notification.handler;
 import com.honeypot.common.handler.AbstractHandler;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import com.honeypot.domain.notification.service.NotificationTokenManageService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -13,10 +13,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 @Component
-@RequiredArgsConstructor
 public class NotificationHandler extends AbstractHandler {
 
     private final NotificationTokenManageService notificationTokenManageService;
+
+    public NotificationHandler(LocalValidatorFactoryBean validator,
+                               NotificationTokenManageService notificationTokenManageService) {
+        super(validator);
+        this.notificationTokenManageService = notificationTokenManageService;
+    }
 
 
     public Mono<ServerResponse> uploadNotificationToken(ServerRequest request) {

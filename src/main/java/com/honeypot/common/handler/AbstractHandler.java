@@ -1,8 +1,8 @@
 package com.honeypot.common.handler;
 
 import com.honeypot.common.errors.exceptions.BadRequestException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -15,10 +15,10 @@ import java.util.function.Function;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public abstract class AbstractHandler {
 
-    @Autowired
-    private LocalValidatorFactoryBean validator;
+    private final LocalValidatorFactoryBean validator;
 
     public <T> Mono<ServerResponse> requireValidBody(
             Function<Mono<T>, Mono<ServerResponse>> function,

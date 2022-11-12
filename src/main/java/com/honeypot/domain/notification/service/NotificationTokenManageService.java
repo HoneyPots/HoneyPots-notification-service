@@ -2,11 +2,12 @@ package com.honeypot.domain.notification.service;
 
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
+import reactor.core.publisher.Mono;
 
 public interface NotificationTokenManageService {
 
-    NotificationTokenDto save(Long memberId, NotificationTokenUploadRequest request);
+    Mono<NotificationTokenDto> save(Long memberId, NotificationTokenUploadRequest request);
 
-    void remove(Long memberId, Long notificationTokenId);
+    Mono<Void> remove(Long memberId, Long notificationTokenId);
 
 }

@@ -24,6 +24,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.RouterFunction;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
@@ -72,7 +73,7 @@ class NotificationHandlerTest {
                 .lastModifiedAt(createdAt)
                 .build();
 
-        when(notificationTokenManageService.save(memberId, request)).thenReturn(expected);
+        when(notificationTokenManageService.save(memberId, request)).thenReturn(Mono.just(expected));
 
         // Act & Assert
         webTestClient.post()

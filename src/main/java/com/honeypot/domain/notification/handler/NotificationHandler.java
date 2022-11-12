@@ -23,19 +23,19 @@ public class NotificationHandler extends AbstractHandler {
         this.notificationTokenManageService = notificationTokenManageService;
     }
 
-
     public Mono<ServerResponse> uploadNotificationToken(ServerRequest request) {
         return this.requireValidBody(tokenUploadRequest -> tokenUploadRequest
                 .map(r -> notificationTokenManageService.save(1L, r))
-                .flatMap(created -> ServerResponse
-                        .created(
-                                UriComponentsBuilder
+                .flatMap(created -> created
+                        .flatMap(c -> ServerResponse
+                                .created(UriComponentsBuilder
                                         .fromPath(request.path() + "/{tokenId}")
-                                        .buildAndExpand(created.getNotificationTokenId())
+                                        .buildAndExpand(c.getNotificationTokenId())
                                         .toUri()
+                                )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(BodyInserters.fromValue(c))
                         )
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromValue(created))
                 ), request, NotificationTokenUploadRequest.class);
     }
 

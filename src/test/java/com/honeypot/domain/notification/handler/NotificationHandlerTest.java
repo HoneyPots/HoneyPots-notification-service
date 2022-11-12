@@ -8,6 +8,7 @@ import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import com.honeypot.domain.notification.router.NotificationRouter;
 import com.honeypot.domain.notification.service.NotificationTokenManageService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -49,6 +50,7 @@ class NotificationHandlerTest {
     }
 
     @Test
+    @DisplayName("[Notification token API] 토큰 등록 성공")
     void uploadNotificationToken() throws JsonProcessingException {
         // Arrange
         Long memberId = 1L;
@@ -83,6 +85,26 @@ class NotificationHandlerTest {
     }
 
     @Test
+    @DisplayName("[Notification token API] 토큰 등록 실패 (잘못된 요청 값)")
+    void uploadNotificationToken_badRequest() {
+        // Arrange
+        Long memberId = 1L;
+        NotificationTokenUploadRequest request = NotificationTokenUploadRequest.builder()
+                .deviceToken("token")
+                .build();
+
+        // Act & Assert
+        webTestClient.post()
+                .uri("/api/notifications/tokens")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(request))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    @DisplayName("[Notification token API] 토큰 삭제")
     void deleteNotificationToken() {
         // Arrange
         Long tokenId = 1124124L;

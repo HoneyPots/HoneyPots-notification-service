@@ -10,20 +10,14 @@ import com.honeypot.domain.notification.service.NotificationTokenManageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.server.HandlerStrategies;
-import org.springframework.web.reactive.function.server.RouterFunction;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -86,6 +80,21 @@ class NotificationHandlerTest {
                 .expectHeader().location("/api/notifications/tokens/" + expected.getNotificationTokenId())
                 .expectBody()
                 .json(objectMapper.writeValueAsString(expected));
+    }
+
+    @Test
+    void deleteNotificationToken() {
+        // Arrange
+        Long tokenId = 1124124L;
+        Long memberId = 1L;
+
+        when(notificationTokenManageService.remove(memberId, tokenId)).thenReturn(Mono.empty());
+
+        // Act & Assert
+        webTestClient.delete()
+                .uri("/api/notifications/tokens/" + tokenId)
+                .exchange()
+                .expectStatus().isNoContent();
     }
 
 }

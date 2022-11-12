@@ -1,12 +1,15 @@
 package com.honeypot.domain.notification.dto;
 
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
 @ToString
 public class NotificationTokenUploadRequest {
 

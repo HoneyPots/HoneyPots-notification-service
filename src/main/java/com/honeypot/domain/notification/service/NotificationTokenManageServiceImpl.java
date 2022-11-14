@@ -1,21 +1,21 @@
 package com.honeypot.domain.notification.service;
 
-import com.honeypot.domain.notification.entity.enums.ClientType;
+import com.honeypot.common.errors.exceptions.InvalidAuthorizationException;
+import com.honeypot.common.errors.exceptions.NotFoundException;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import com.honeypot.domain.notification.entity.NotificationToken;
+import com.honeypot.domain.notification.entity.enums.ClientType;
 import com.honeypot.domain.notification.mapper.NotificationTokenMapper;
 import com.honeypot.domain.notification.repository.NotificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
 @Service
-@Validated
 @RequiredArgsConstructor
 public class NotificationTokenManageServiceImpl implements NotificationTokenManageService {
 
@@ -52,7 +52,18 @@ public class NotificationTokenManageServiceImpl implements NotificationTokenMana
 
     @Override
     @Transactional
-    public Mono<Void> remove(Long memberId, Long notificationTokenId) {
+    public Mono<Void> remove(Long memberId, String notificationTokenId) {
+        NotificationToken token = notificationTokenRepository
+                .findById(notificationTokenId)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("There is no token [%s]", notificationTokenId)
+                ));
+
+        if (!memberId.equals(token.getMemberId())) {
+            throw new InvalidAuthorizationException();
+        }
+
+        notificationTokenRepository.delete(token);
         return Mono.empty();
     }
 

@@ -107,7 +107,7 @@ class NotificationHandlerTest {
     @DisplayName("[Notification token API] 토큰 삭제")
     void deleteNotificationToken() {
         // Arrange
-        Long tokenId = 1124124L;
+        String tokenId = "tokenasdkfjcasdf";
         Long memberId = 1L;
 
         when(notificationTokenManageService.remove(memberId, tokenId)).thenReturn(Mono.empty());

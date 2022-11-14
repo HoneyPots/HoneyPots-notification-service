@@ -1,5 +1,6 @@
 package com.honeypot.domain.notification.service;
 
+import com.honeypot.common.errors.exceptions.InvalidAuthorizationException;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import com.honeypot.domain.notification.entity.NotificationToken;
@@ -7,6 +8,7 @@ import com.honeypot.domain.notification.entity.enums.ClientType;
 import com.honeypot.domain.notification.mapper.NotificationTokenMapper;
 import com.honeypot.domain.notification.repository.NotificationTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -22,7 +24,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
 
 @ExtendWith({SpringExtension.class, MockitoExtension.class})
 class NotificationTokenManageServiceImplTest {
@@ -47,6 +50,7 @@ class NotificationTokenManageServiceImplTest {
     }
 
     @Test
+    @DisplayName("NotificationToken 신규 등록 성공")
     void save_UploadNewToken() {
         // Arrange
         Long memberId = 123L;
@@ -98,6 +102,7 @@ class NotificationTokenManageServiceImplTest {
     }
 
     @Test
+    @DisplayName("NotificationToken 이미 존재하는 경우, Version 업데이트")
     void save_UpdateExistsToken() {
         // Arrange
         Long memberId = 1234124L;
@@ -152,7 +157,51 @@ class NotificationTokenManageServiceImplTest {
     }
 
     @Test
+    @DisplayName("NotificationToken 삭제 성공")
     void remove() {
+        // Arrange
+        Long memberId = 1242352L;
+        String notificationTokenId = "tokenId";
+
+        NotificationToken exists = create(notificationTokenId, "token", ClientType.WEB, memberId);
+
+        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Optional.of(exists));
+        doNothing().when(notificationTokenRepository).delete(exists);
+
+        // Act
+        notificationTokenManageService.remove(memberId, notificationTokenId);
+
+        // Assert
+        verify(notificationTokenRepository, times(1)).delete(exists);
+    }
+
+    @Test
+    @DisplayName("NotificationToken 삭제 실패 (InvalidAuthorization)")
+    void remove_InvalidAuthorizationException() {
+        // Arrange
+        Long memberId = 1242352L;
+        String notificationTokenId = "tokenId";
+
+        NotificationToken exists = create(notificationTokenId, "toke2n", ClientType.IOS, memberId + 1L);
+
+        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Optional.of(exists));
+
+        // Act & Assert
+        assertThrows(InvalidAuthorizationException.class, () -> {
+            notificationTokenManageService.remove(memberId, notificationTokenId);
+        });
+    }
+
+    private NotificationToken create(String id, String token, ClientType clientType, Long memberId) {
+        LocalDateTime now = LocalDateTime.now();
+        return NotificationToken.builder()
+                .id(id)
+                .deviceToken(token)
+                .clientType(clientType)
+                .memberId(memberId)
+                .createdAt(now)
+                .lastModifiedAt(now)
+                .build();
     }
 
 }

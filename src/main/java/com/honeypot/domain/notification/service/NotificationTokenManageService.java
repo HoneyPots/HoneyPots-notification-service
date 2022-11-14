@@ -8,6 +8,6 @@ public interface NotificationTokenManageService {
 
     Mono<NotificationTokenDto> save(Long memberId, NotificationTokenUploadRequest request);
 
-    Mono<Void> remove(Long memberId, Long notificationTokenId);
+    Mono<Void> remove(Long memberId, String notificationTokenId);
 
 }

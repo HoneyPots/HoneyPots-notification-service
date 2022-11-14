@@ -40,7 +40,7 @@ public class NotificationHandler extends AbstractHandler {
     }
 
     public Mono<ServerResponse> deleteNotificationToken(ServerRequest request) {
-        Long tokenId = Long.parseLong(request.pathVariable("tokenId"));
+        String tokenId = request.pathVariable("tokenId");
         notificationTokenManageService.remove(1L, tokenId);
         return ServerResponse.noContent().build();
     }

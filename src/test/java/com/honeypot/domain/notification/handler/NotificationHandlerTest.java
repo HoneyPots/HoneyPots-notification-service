@@ -2,7 +2,7 @@ package com.honeypot.domain.notification.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeypot.domain.notification.dto.ClientType;
+import com.honeypot.domain.notification.entity.enums.ClientType;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import com.honeypot.domain.notification.router.NotificationRouter;
@@ -61,7 +61,7 @@ class NotificationHandlerTest {
 
         LocalDateTime createdAt = LocalDateTime.now();
         NotificationTokenDto expected = NotificationTokenDto.builder()
-                .notificationTokenId(17434L)
+                .notificationTokenId("test")
                 .deviceToken(request.getDeviceToken())
                 .clientType(request.getClientType())
                 .memberId(memberId)
@@ -107,7 +107,7 @@ class NotificationHandlerTest {
     @DisplayName("[Notification token API] 토큰 삭제")
     void deleteNotificationToken() {
         // Arrange
-        Long tokenId = 1124124L;
+        String tokenId = "tokenasdkfjcasdf";
         Long memberId = 1L;
 
         when(notificationTokenManageService.remove(memberId, tokenId)).thenReturn(Mono.empty());

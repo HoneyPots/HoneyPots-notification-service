@@ -1,6 +1,6 @@
 package com.honeypot.domain.notification.service;
 
-import com.honeypot.domain.notification.dto.ClientType;
+import com.honeypot.domain.notification.entity.enums.ClientType;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class NotificationTokenManageServiceImpl implements NotificationTokenMana
 
         return Mono.just(
                 NotificationTokenDto.builder()
-                        .notificationTokenId(1L)
+                        .notificationTokenId("test")
                         .clientType(ClientType.WEB)
                         .deviceToken("deviceToken")
                         .createdAt(LocalDateTime.now())

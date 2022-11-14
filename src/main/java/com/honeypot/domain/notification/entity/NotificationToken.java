@@ -1,6 +1,6 @@
 package com.honeypot.domain.notification.entity;
 
-import com.honeypot.domain.notification.dto.ClientType;
+import com.honeypot.domain.notification.entity.enums.ClientType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

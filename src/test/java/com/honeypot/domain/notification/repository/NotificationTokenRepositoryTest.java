@@ -8,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,6 +24,46 @@ class NotificationTokenRepositoryTest {
     @BeforeEach
     public void before() {
         notificationTokenRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("MemberId를 이용한 NotificationToken 조회 성공")
+    void findByMemberId() {
+        // Arrange
+        Long memberId = 123L;
+
+        Random random = new Random();
+        List<String> deviceTokens = new ArrayList<>();
+        for (int i = 0; i < 15; i++) {
+            String generatedToken = random.ints('a', 'z' + 1)
+                    .limit(10)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+            deviceTokens.add(generatedToken);
+            createNotificationToken(memberId, generatedToken, ClientType.WEB);
+        }
+
+        // Act
+        List<NotificationToken> result = notificationTokenRepository.findByMemberId(memberId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(deviceTokens.size(), result.size());
+        boolean isAllOwnToken = true;
+        boolean isTokenAllValid = true;
+        for (NotificationToken token : result) {
+            if (!token.getMemberId().equals(memberId)) {
+                isAllOwnToken = false;
+                break;
+            }
+
+            if (!deviceTokens.contains(token.getDeviceToken())) {
+                isTokenAllValid = false;
+                break;
+            }
+        }
+        assertTrue(isAllOwnToken);
+        assertTrue(isTokenAllValid);
     }
 
     @Test

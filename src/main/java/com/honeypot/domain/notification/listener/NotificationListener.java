@@ -30,6 +30,10 @@ public class NotificationListener {
         CommentDto comment = event.getCreatedComment();
         WriterDto writer = event.getCreatedComment().getWriter();
 
+        if (writer.getId().equals(post.getWriter().getId())) {
+            return;
+        }
+
         CommentNotificationResource resource = CommentNotificationResource.builder()
                 .postResource(PostNotificationResource.builder()
                         .id(post.getPostId())
@@ -57,6 +61,10 @@ public class NotificationListener {
         SimplePostDto post = event.getTargetPost();
         ReactionDto reaction = event.getCreatedReaction();
         ReactorDto reactor = event.getCreatedReaction().getReactor();
+
+        if (reactor.getId().equals(post.getWriter().getId()) || reaction.isAlreadyExists()) {
+            return;
+        }
 
         ReactionNotificationResource resource = ReactionNotificationResource.builder()
                 .postResource(PostNotificationResource.builder()

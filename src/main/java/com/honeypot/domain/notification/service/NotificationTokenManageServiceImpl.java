@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,14 @@ public class NotificationTokenManageServiceImpl implements NotificationTokenMana
     private final NotificationTokenRepository notificationTokenRepository;
 
     private final NotificationTokenMapper notificationTokenMapper;
+
+    @Override
+    public List<NotificationTokenDto> findByMemberId(Long memberId) {
+        return notificationTokenRepository.findByMemberId(memberId)
+                .stream()
+                .map(notificationTokenMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
     @Override
     @Transactional

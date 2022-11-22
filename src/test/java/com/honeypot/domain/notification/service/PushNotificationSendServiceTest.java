@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeypot.domain.notification.dto.*;
 import com.honeypot.domain.notification.entity.enums.NotificationType;
 import com.honeypot.domain.notification.entity.enums.PostType;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes = {PushNotificationSendService.class, ObjectMapper.class})
 class PushNotificationSendServiceTest {
@@ -21,12 +23,16 @@ class PushNotificationSendServiceTest {
     @MockBean
     private NotificationTokenManageServiceImpl notificationTokenManageService;
 
+    @MockBean
+    private NotificationHistoryServiceImpl notificationHistoryService;
+
     @Autowired
     private PushNotificationSendService notificationSendService;
 
     @Test
     @Timeout(10)
-    void send_ToSingleMember() {
+    @DisplayName("푸시 알림 메시지 전송 성공")
+    void send_SendSuccess() {
         // Arrange
         Long receiverId = 1L;
         NotificationType type = NotificationType.COMMENT_TO_POST;
@@ -57,6 +63,9 @@ class PushNotificationSendServiceTest {
 
         // Act
         notificationSendService.send(data);
+
+        // Assert
+        verify(notificationHistoryService, times(1)).save(any(NotificationHistoryDto.class));
     }
 
 }

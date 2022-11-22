@@ -11,6 +11,8 @@ import com.google.firebase.messaging.Notification;
 import com.honeypot.domain.notification.dto.NotificationData;
 import com.honeypot.domain.notification.dto.NotificationResource;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
+import com.honeypot.domain.notification.entity.NotificationHistory;
+import com.honeypot.domain.notification.repository.NotificationHistoryRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -33,15 +35,19 @@ public class PushNotificationSendService implements NotificationSendService {
 
     private final NotificationTokenManageService notificationTokenManageService;
 
+    private final NotificationHistoryRepository notificationHistoryRepository;
+
     private final ObjectMapper objectMapper;
 
     public PushNotificationSendService(@Value("${fcm.key.path}") String fcmKeyPath,
                                        @Value("${fcm.key.scope}") String[] fcmKeyScope,
                                        NotificationTokenManageService notificationTokenManageService,
+                                       NotificationHistoryRepository notificationHistoryRepository,
                                        ObjectMapper objectMapper) {
         this.fcmKeyPath = fcmKeyPath;
         this.fcmKeyScope = fcmKeyScope;
         this.notificationTokenManageService = notificationTokenManageService;
+        this.notificationHistoryRepository = notificationHistoryRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -69,6 +75,16 @@ public class PushNotificationSendService implements NotificationSendService {
     @Async
     @Override
     public <T extends NotificationResource> void send(NotificationData<T> data) {
+        notificationHistoryRepository.save(
+                NotificationHistory.builder()
+                        .memberId(data.getReceiverId())
+                        .type(data.getType())
+                        .title(data.getTitle())
+                        .content(data.getContent())
+                        .resource(data.getResource())
+                        .build()
+        );
+
         List<Message> messages
                 = notificationTokenManageService.findByMemberId(data.getReceiverId())
                 .stream()

@@ -1,5 +1,6 @@
 package com.honeypot.domain.notification.service;
 
+import com.honeypot.common.errors.exceptions.NotFoundException;
 import com.honeypot.domain.notification.dto.CommentNotificationResource;
 import com.honeypot.domain.notification.dto.NotificationHistoryDto;
 import com.honeypot.domain.notification.dto.PostNotificationResource;
@@ -9,6 +10,7 @@ import com.honeypot.domain.notification.entity.enums.PostType;
 import com.honeypot.domain.notification.mapper.NotificationHistoryMapper;
 import com.honeypot.domain.notification.repository.NotificationHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -48,26 +50,64 @@ class NotificationHistoryServiceImplTest {
     }
 
     @Test
+    @DisplayName("단일 NotificationHistory 조회 성공")
+    void findById() {
+        // Arrange
+        Long memberId = 1L;
+        String notificationId = "notificationId";
+        LocalDateTime now = LocalDateTime.now();
+        NotificationHistory history = NotificationHistory.builder()
+                .id(notificationId)
+                .memberId(memberId)
+                .type(NotificationType.LIKE_REACTION_TO_POST)
+                .title("title")
+                .content("content")
+                .resource(createCommentNotificationResource(memberId))
+                .createdAt(now)
+                .lastModifiedAt(now)
+                .build();
+
+        when(notificationHistoryRepository.findById(notificationId)).thenReturn(Mono.just(history));
+
+        NotificationHistoryDto expected = notificationHistoryMapper.toDto(history);
+        when(notificationHistoryMapperMock.toDto(any(NotificationHistory.class))).thenReturn(expected);
+
+        // Act
+        Mono<NotificationHistoryDto> result = notificationHistoryService.findById(notificationId);
+
+        // Assert
+        StepVerifier.create(result)
+                .assertNext(find -> verifyEquals(expected, find))
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("단일 NotificationHistory 조회 실패 (NotFoundException")
+    void findById_NotFoundException() {
+        // Arrange
+        String notificationId = "notificationId";
+        when(notificationHistoryRepository.findById(notificationId)).thenReturn(Mono.empty());
+
+        // Act
+        Mono<NotificationHistoryDto> result = notificationHistoryService.findById(notificationId);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    @DisplayName("NotificationHistory 저장 성공")
     void save() {
         // Arrange
         Long memberId = 123L;
-
-        CommentNotificationResource resource = CommentNotificationResource.builder()
-                .postResource(PostNotificationResource.builder()
-                        .id(memberId)
-                        .type(PostType.NORMAL)
-                        .writer("postWriter")
-                        .build())
-                .commentId(61324L)
-                .commenter("commentWriter")
-                .build();
-
         NotificationHistoryDto dto = NotificationHistoryDto.builder()
                 .memberId(memberId)
                 .title("title")
                 .content("content")
                 .type(NotificationType.COMMENT_TO_POST)
-                .resource(resource)
+                .resource(createCommentNotificationResource(memberId))
                 .build();
 
         when(notificationHistoryRepository.save(any(NotificationHistory.class)))
@@ -104,17 +144,30 @@ class NotificationHistoryServiceImplTest {
 
         // Assert
         StepVerifier.create(result)
-                .assertNext(history -> {
-                    assertEquals(expected.getNotificationHistoryId(), history.getNotificationHistoryId());
-                    assertEquals(expected.getMemberId(), history.getMemberId());
-                    assertEquals(expected.getTitle(), history.getTitle());
-                    assertEquals(expected.getContent(), history.getContent());
-                    assertEquals(expected.getType(), history.getType());
-                    assertEquals(expected.getResource(), history.getResource());
-                    assertEquals(expected.getCreatedAt(), history.getCreatedAt());
-                    assertEquals(expected.getLastModifiedAt(), history.getLastModifiedAt());
-                })
+                .assertNext(history -> verifyEquals(expected, history))
                 .verifyComplete();
     }
 
+    private CommentNotificationResource createCommentNotificationResource(Long memberId) {
+        return CommentNotificationResource.builder()
+                .postResource(PostNotificationResource.builder()
+                        .id(memberId)
+                        .type(PostType.NORMAL)
+                        .writer("postWriter")
+                        .build())
+                .commentId(61324L)
+                .commenter("commentWriter")
+                .build();
+    }
+
+    private void verifyEquals(NotificationHistoryDto expected, NotificationHistoryDto real) {
+        assertEquals(expected.getNotificationHistoryId(), real.getNotificationHistoryId());
+        assertEquals(expected.getMemberId(), real.getMemberId());
+        assertEquals(expected.getTitle(), real.getTitle());
+        assertEquals(expected.getContent(), real.getContent());
+        assertEquals(expected.getType(), real.getType());
+        assertEquals(expected.getResource(), real.getResource());
+        assertEquals(expected.getCreatedAt(), real.getCreatedAt());
+        assertEquals(expected.getLastModifiedAt(), real.getLastModifiedAt());
+    }
 }

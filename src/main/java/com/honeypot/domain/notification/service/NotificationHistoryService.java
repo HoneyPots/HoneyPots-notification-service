@@ -5,6 +5,8 @@ import reactor.core.publisher.Mono;
 
 public interface NotificationHistoryService {
 
+    Mono<NotificationHistoryDto> findById(String historyId);
+
     Mono<NotificationHistoryDto> save(NotificationHistoryDto history);
 
 }

@@ -2,10 +2,13 @@ package com.honeypot.domain.notification.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeypot.domain.notification.entity.enums.ClientType;
+import com.honeypot.domain.notification.dto.NotificationHistoryDto;
 import com.honeypot.domain.notification.dto.NotificationTokenDto;
 import com.honeypot.domain.notification.dto.NotificationTokenUploadRequest;
+import com.honeypot.domain.notification.entity.enums.ClientType;
+import com.honeypot.domain.notification.entity.enums.NotificationType;
 import com.honeypot.domain.notification.router.NotificationRouter;
+import com.honeypot.domain.notification.service.NotificationHistoryService;
 import com.honeypot.domain.notification.service.NotificationTokenManageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,9 +47,32 @@ class NotificationHandlerTest {
     @MockBean
     private NotificationTokenManageService notificationTokenManageService;
 
+    @MockBean
+    private NotificationHistoryService notificationHistoryService;
+
     @BeforeEach
     void setUp() {
         webTestClient = WebTestClient.bindToApplicationContext(context).build();
+    }
+
+    @Test
+    @DisplayName("[Notification History API] 알림정보 상세 조회 성공")
+    void inquiryNotificationDetail() throws JsonProcessingException {
+        // Arrange
+        Long memberId = 1L;
+        String notificationId = "notificationId";
+
+        NotificationHistoryDto expected = createNotificationHistory(notificationId, memberId);
+        when(notificationHistoryService.findById(notificationId)).thenReturn(Mono.just(expected));
+
+        // Act & Assert
+        webTestClient.get()
+                .uri("/api/notifications/" + notificationId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .json(objectMapper.writeValueAsString(expected));
     }
 
     @Test
@@ -119,4 +145,16 @@ class NotificationHandlerTest {
                 .expectStatus().isNoContent();
     }
 
+    private NotificationHistoryDto createNotificationHistory(String notificationId, Long memberId) {
+        LocalDateTime now = LocalDateTime.now();
+        return NotificationHistoryDto.builder()
+                .notificationHistoryId(notificationId)
+                .memberId(memberId)
+                .type(NotificationType.LIKE_REACTION_TO_POST)
+                .title("title")
+                .content("content")
+                .createdAt(now)
+                .lastModifiedAt(now)
+                .build();
+    }
 }

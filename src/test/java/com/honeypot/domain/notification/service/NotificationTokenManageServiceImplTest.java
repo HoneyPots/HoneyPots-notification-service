@@ -16,13 +16,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,13 +66,20 @@ class NotificationTokenManageServiceImplTest {
                     .toString();
             tokens.add(create(generatedToken, generatedToken, ClientType.WEB, memberId));
         }
-        when(notificationTokenRepository.findByMemberId(memberId)).thenReturn(tokens);
+
+        when(notificationTokenRepository.findByMemberId(memberId)).thenReturn(Flux.fromIterable(tokens));
+        for (NotificationToken token : tokens) {
+            NotificationTokenDto dto = notificationTokenMapper.toDto(token);
+            when(notificationTokenMapperMock.toDto(token)).thenReturn(dto);
+        }
 
         // Act
-        List<NotificationTokenDto> result = notificationTokenManageService.findByMemberId(memberId);
+        Flux<NotificationTokenDto> result = notificationTokenManageService.findByMemberId(memberId);
 
         // Assert
-        assertEquals(tokens.size(), result.size());
+        StepVerifier.create(result)
+                .expectNextCount(tokens.size())
+                .verifyComplete();
     }
 
     @Test
@@ -86,7 +93,7 @@ class NotificationTokenManageServiceImplTest {
                 .build();
 
         when(notificationTokenRepository.findByMemberIdAndDeviceToken(memberId, request.getDeviceToken()))
-                .thenReturn(Optional.empty());
+                .thenReturn(Mono.empty());
 
         NotificationToken created = NotificationToken.builder()
                 .deviceToken(request.getDeviceToken())
@@ -98,14 +105,16 @@ class NotificationTokenManageServiceImplTest {
                 .thenAnswer((invocation) -> {
                     LocalDateTime createdAt = LocalDateTime.now();
                     NotificationToken arg = invocation.getArgument(0);
-                    return NotificationToken.builder()
-                            .id("generatedMemberId")
-                            .memberId(arg.getMemberId())
-                            .deviceToken(arg.getDeviceToken())
-                            .clientType(arg.getClientType())
-                            .createdAt(createdAt)
-                            .lastModifiedAt(createdAt)
-                            .build();
+                    return Mono.just(
+                            NotificationToken.builder()
+                                    .id("generatedMemberId")
+                                    .memberId(arg.getMemberId())
+                                    .deviceToken(arg.getDeviceToken())
+                                    .clientType(arg.getClientType())
+                                    .createdAt(createdAt)
+                                    .lastModifiedAt(createdAt)
+                                    .build()
+                    );
                 });
 
         NotificationTokenDto expected = notificationTokenMapper.toDto(created);
@@ -148,20 +157,22 @@ class NotificationTokenManageServiceImplTest {
                 .build();
 
         when(notificationTokenRepository.findByMemberIdAndDeviceToken(memberId, request.getDeviceToken()))
-                .thenReturn(Optional.of(exists));
+                .thenReturn(Mono.just(exists));
 
         when(notificationTokenRepository.save(any(NotificationToken.class)))
                 .thenAnswer((invocation) -> {
                     LocalDateTime modifiedAt = LocalDateTime.now();
                     NotificationToken arg = invocation.getArgument(0);
-                    return NotificationToken.builder()
-                            .id(arg.getId())
-                            .memberId(arg.getMemberId())
-                            .deviceToken(arg.getDeviceToken())
-                            .clientType(arg.getClientType())
-                            .createdAt(createdAt)
-                            .lastModifiedAt(modifiedAt)
-                            .build();
+                    return Mono.just(
+                            NotificationToken.builder()
+                                    .id(arg.getId())
+                                    .memberId(arg.getMemberId())
+                                    .deviceToken(arg.getDeviceToken())
+                                    .clientType(arg.getClientType())
+                                    .createdAt(createdAt)
+                                    .lastModifiedAt(modifiedAt)
+                                    .build()
+                    );
                 });
         NotificationTokenDto expected = notificationTokenMapper.toDto(exists);
         when(notificationTokenMapperMock.toDto(any(NotificationToken.class))).thenReturn(expected);
@@ -191,13 +202,14 @@ class NotificationTokenManageServiceImplTest {
 
         NotificationToken exists = create(notificationTokenId, "token", ClientType.WEB, memberId);
 
-        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Optional.of(exists));
-        doNothing().when(notificationTokenRepository).delete(exists);
+        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Mono.just(exists));
+        when(notificationTokenRepository.delete(exists)).thenReturn(Mono.empty());
 
         // Act
-        notificationTokenManageService.remove(memberId, notificationTokenId);
+        Mono<Void> result = notificationTokenManageService.remove(memberId, notificationTokenId);
 
         // Assert
+        StepVerifier.create(result).verifyComplete();
         verify(notificationTokenRepository, times(1)).delete(exists);
     }
 
@@ -210,12 +222,15 @@ class NotificationTokenManageServiceImplTest {
 
         NotificationToken exists = create(notificationTokenId, "toke2n", ClientType.IOS, memberId + 1L);
 
-        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Optional.of(exists));
+        when(notificationTokenRepository.findById(notificationTokenId)).thenReturn(Mono.just(exists));
 
-        // Act & Assert
-        assertThrows(InvalidAuthorizationException.class, () -> {
-            notificationTokenManageService.remove(memberId, notificationTokenId);
-        });
+        // Act
+        Mono<Void> result = notificationTokenManageService.remove(memberId, notificationTokenId);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectError(InvalidAuthorizationException.class)
+                .verify();
     }
 
     private NotificationToken create(String id, String token, ClientType clientType, Long memberId) {

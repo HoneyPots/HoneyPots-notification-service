@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ class PushNotificationSendServiceTest {
         tokens.add(NotificationTokenDto.builder().deviceToken(token).build());
         tokens.add(NotificationTokenDto.builder().deviceToken(token2).build());
 
-        when(notificationTokenManageService.findByMemberId(receiverId)).thenReturn(tokens);
+        when(notificationTokenManageService.findByMemberId(receiverId)).thenReturn(Flux.fromIterable(tokens));
 
         CommentNotificationResource resource = CommentNotificationResource.builder()
                 .postResource(PostNotificationResource.builder()

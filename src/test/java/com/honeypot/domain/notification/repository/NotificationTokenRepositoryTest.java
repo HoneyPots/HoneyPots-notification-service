@@ -7,6 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,26 +47,20 @@ class NotificationTokenRepositoryTest {
         }
 
         // Act
-        List<NotificationToken> result = notificationTokenRepository.findByMemberId(memberId);
+        Flux<NotificationToken> result = notificationTokenRepository.findByMemberId(memberId);
 
         // Assert
-        assertNotNull(result);
-        assertEquals(deviceTokens.size(), result.size());
-        boolean isAllOwnToken = true;
-        boolean isTokenAllValid = true;
-        for (NotificationToken token : result) {
-            if (!token.getMemberId().equals(memberId)) {
-                isAllOwnToken = false;
-                break;
-            }
+        StepVerifier.create(result)
+                .expectNextCount(deviceTokens.size())
+                .assertNext(token -> {
+                    if (!token.getMemberId().equals(memberId)) {
+                        fail();
+                    }
 
-            if (!deviceTokens.contains(token.getDeviceToken())) {
-                isTokenAllValid = false;
-                break;
-            }
-        }
-        assertTrue(isAllOwnToken);
-        assertTrue(isTokenAllValid);
+                    if (!deviceTokens.contains(token.getDeviceToken())) {
+                        fail();
+                    }
+                });
     }
 
     @Test
@@ -73,16 +70,19 @@ class NotificationTokenRepositoryTest {
         String deviceToken = "notificationDeviceToken";
 
         Long memberId = 123L;
-        createNotificationToken(memberId, deviceToken, ClientType.WEB);
+        createNotificationToken(memberId, deviceToken, ClientType.AOS);
 
         // Act
-        Optional<NotificationToken> result
+        Mono<NotificationToken> result
                 = notificationTokenRepository.findByMemberIdAndDeviceToken(memberId, deviceToken);
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals(memberId, result.get().getMemberId());
-        assertEquals(deviceToken, result.get().getDeviceToken());
+        StepVerifier.create(result)
+                .assertNext(token -> {
+                    assertEquals(memberId, token.getMemberId());
+                    assertEquals(deviceToken, token.getDeviceToken());
+                })
+                .expectNextCount(1);
     }
 
     @Test
@@ -94,11 +94,11 @@ class NotificationTokenRepositoryTest {
         Long memberId = 123L;
 
         // Act
-        Optional<NotificationToken> result
+        Mono<NotificationToken> result
                 = notificationTokenRepository.findByMemberIdAndDeviceToken(memberId, deviceToken);
 
         // Assert
-        assertFalse(result.isPresent());
+        StepVerifier.create(result).expectNextCount(0).verifyComplete();
     }
 
     private void createNotificationToken(Long memberId, String token, ClientType clientType) {

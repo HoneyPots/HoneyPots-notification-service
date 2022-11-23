@@ -1,17 +1,16 @@
 package com.honeypot.domain.notification.repository;
 
 import com.honeypot.domain.notification.entity.NotificationToken;
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Optional;
+public interface NotificationTokenRepository extends ReactiveMongoRepository<NotificationToken, String> {
 
-public interface NotificationTokenRepository extends MongoRepository<NotificationToken, String> {
-
-    List<NotificationToken> findByMemberId(Long memberId);
+    Flux<NotificationToken> findByMemberId(Long memberId);
 
     @Query("{memberId : ?0, deviceToken : '?1'}")
-    Optional<NotificationToken> findByMemberIdAndDeviceToken(Long memberId, String deviceToken);
+    Mono<NotificationToken> findByMemberIdAndDeviceToken(Long memberId, String deviceToken);
 
 }

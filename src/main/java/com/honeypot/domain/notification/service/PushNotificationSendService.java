@@ -74,17 +74,14 @@ public class PushNotificationSendService implements NotificationSendService {
     @Async
     @Override
     public <T extends NotificationResource> void send(NotificationData<T> data) {
-        List<Message> messages
-                = notificationTokenManageService.findByMemberId(data.getReceiverId())
-                .stream()
+        notificationTokenManageService.findByMemberId(data.getReceiverId())
                 .map(NotificationTokenDto::getDeviceToken)
                 .map(token -> message(token, data))
-                .toList();
-
-        if (!messages.isEmpty()) {
-            FirebaseMessaging.getInstance().sendAllAsync(messages);
-            notificationHistoryService.save(NotificationHistoryDto.toDto(data));
-        }
+                .buffer()
+                .subscribe(messages -> {
+                    FirebaseMessaging.getInstance().sendAllAsync(messages);
+                    notificationHistoryService.save(NotificationHistoryDto.toDto(data)).subscribe();
+                });
     }
 
     private <T extends NotificationResource> Message message(String token, NotificationData<T> data) {

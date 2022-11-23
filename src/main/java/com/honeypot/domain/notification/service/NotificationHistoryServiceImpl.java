@@ -18,17 +18,15 @@ public class NotificationHistoryServiceImpl implements NotificationHistoryServic
 
     @Override
     public Mono<NotificationHistoryDto> save(NotificationHistoryDto history) {
-        return Mono.just(notificationHistoryMapper.toDto(
-                notificationHistoryRepository.save(
-                        NotificationHistory.builder()
-                                .memberId(history.getMemberId())
-                                .title(history.getTitle())
-                                .content(history.getContent())
-                                .type(history.getType())
-                                .resource(history.getResource())
-                                .build()
-                )
-        ));
+        return notificationHistoryRepository.save(
+                NotificationHistory.builder()
+                        .memberId(history.getMemberId())
+                        .title(history.getTitle())
+                        .content(history.getContent())
+                        .type(history.getType())
+                        .resource(history.getResource())
+                        .build()
+        ).map(notificationHistoryMapper::toDto);
     }
 
 }

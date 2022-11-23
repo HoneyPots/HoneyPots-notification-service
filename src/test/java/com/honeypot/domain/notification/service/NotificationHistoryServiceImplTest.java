@@ -74,24 +74,26 @@ class NotificationHistoryServiceImplTest {
                 .thenAnswer((invocation) -> {
                     LocalDateTime createdAt = LocalDateTime.now();
                     NotificationHistory arg = invocation.getArgument(0);
-                    return NotificationHistory.builder()
-                            .id("sdkfkalsciasdjklfewr")
-                            .memberId(arg.getMemberId())
-                            .title(arg.getTitle())
-                            .content(arg.getContent())
-                            .type(arg.getType())
-                            .resource(arg.getResource())
-                            .createdAt(createdAt)
-                            .lastModifiedAt(createdAt)
-                            .build();
+                    return Mono.just(
+                            NotificationHistory.builder()
+                                    .id("sdkfkalsciasdjklfewr")
+                                    .memberId(arg.getMemberId())
+                                    .title(arg.getTitle())
+                                    .content(arg.getContent())
+                                    .type(arg.getType())
+                                    .resource(arg.getResource())
+                                    .createdAt(createdAt)
+                                    .lastModifiedAt(createdAt)
+                                    .build()
+                    );
                 });
 
         NotificationHistory created = NotificationHistory.builder()
-                .memberId(memberId)
-                .title("title")
-                .content("content")
-                .type(NotificationType.COMMENT_TO_POST)
-                .resource(resource)
+                .memberId(dto.getMemberId())
+                .title(dto.getTitle())
+                .content(dto.getContent())
+                .type(dto.getType())
+                .resource(dto.getResource())
                 .build();
 
         NotificationHistoryDto expected = notificationHistoryMapper.toDto(created);

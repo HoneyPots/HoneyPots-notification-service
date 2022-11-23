@@ -83,7 +83,7 @@ public class PushNotificationSendService implements NotificationSendService {
 
         if (!messages.isEmpty()) {
             FirebaseMessaging.getInstance().sendAllAsync(messages);
-            notificationHistoryService.save(NotificationHistoryDto.toDto(data));
+            notificationHistoryService.save(NotificationHistoryDto.toDto(data)).subscribe();
         }
     }
 

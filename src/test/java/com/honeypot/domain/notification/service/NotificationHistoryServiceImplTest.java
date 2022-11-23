@@ -17,11 +17,16 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +46,33 @@ class NotificationHistoryServiceImplTest {
     @InjectMocks
     private NotificationHistoryServiceImpl notificationHistoryService;
 
+    private static final List<Long> members = new ArrayList<>();
+
+    private static final List<NotificationHistory> dummy = new ArrayList<>();
+
+    static {
+        for (long i = 1; i <= 3; i++) {
+            members.add(i);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < 100; i++) {
+            int randomNum = ThreadLocalRandom.current().nextInt(0, members.size());
+            Long memberId = members.get(randomNum);
+
+            NotificationHistory notification = NotificationHistory.builder()
+                    .id(i + "")
+                    .memberId(memberId)
+                    .title(String.format("this is test message (%d)", i + 1L))
+                    .content(String.format("this is test message (%d)", i + 1L))
+                    .type(i < 50 ? NotificationType.COMMENT_TO_POST : NotificationType.LIKE_REACTION_TO_POST)
+                    .createdAt(now)
+                    .lastModifiedAt(now)
+                    .build();
+            dummy.add(notification);
+        }
+    }
+
     @BeforeEach
     private void before() {
         this.notificationHistoryService = new NotificationHistoryServiceImpl(
@@ -50,7 +82,7 @@ class NotificationHistoryServiceImplTest {
     }
 
     @Test
-    @DisplayName("단일 NotificationHistory 조회 성공")
+    @DisplayName("단일 NotificationHistoryDto 조회 성공")
     void findById() {
         // Arrange
         Long memberId = 1L;
@@ -82,7 +114,7 @@ class NotificationHistoryServiceImplTest {
     }
 
     @Test
-    @DisplayName("단일 NotificationHistory 조회 실패 (NotFoundException")
+    @DisplayName("단일 NotificationHistoryDto 조회 실패 (NotFoundException")
     void findById_NotFoundException() {
         // Arrange
         String notificationId = "notificationId";
@@ -95,6 +127,29 @@ class NotificationHistoryServiceImplTest {
         StepVerifier.create(result)
                 .expectError(NotFoundException.class)
                 .verify();
+    }
+
+    @Test
+    @DisplayName("회원별 NotificationHistoryDto 목록 조회 성공")
+    void findByMemberId() {
+        // Arrange
+        Long memberId = 1L;
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt")));
+
+        Page<NotificationHistory> page = createNotificationPage(memberId, pageable);
+        when(notificationHistoryRepository.findByMemberId(memberId, pageable)).thenReturn(Flux.fromIterable(page));
+        for (NotificationHistory history : page.getContent()) {
+            NotificationHistoryDto dto = notificationHistoryMapper.toDto(history);
+            when(notificationHistoryMapperMock.toDto(history)).thenReturn(dto);
+        }
+
+        // Act
+        Flux<NotificationHistoryDto> result = notificationHistoryService.findByMemberId(memberId, pageable);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectNextCount(page.getSize())
+                .verifyComplete();
     }
 
     @Test
@@ -170,4 +225,21 @@ class NotificationHistoryServiceImplTest {
         assertEquals(expected.getCreatedAt(), real.getCreatedAt());
         assertEquals(expected.getLastModifiedAt(), real.getLastModifiedAt());
     }
+
+    private Page<NotificationHistory> createNotificationPage(Long memberId, Pageable pageable) {
+        List<NotificationHistory> list = dummy.stream()
+                .filter(n -> n.getMemberId().equals(memberId))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = (int) (pageable.getOffset() + pageable.getPageSize());
+        end = Math.min(end, list.size());
+
+        return new PageImpl<>(list.subList(start, end), pageable, list.size());
+    }
+
+    private NotificationHistory findDummy(String notificationId) {
+        return dummy.stream().filter(n -> n.getId().equals(notificationId)).findFirst().orElse(null);
+    }
+
 }

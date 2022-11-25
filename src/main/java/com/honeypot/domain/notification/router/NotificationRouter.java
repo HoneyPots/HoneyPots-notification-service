@@ -22,6 +22,8 @@ public class NotificationRouter {
                         .nest(contentType(APPLICATION_JSON), b2 -> b2
                                 .POST("/tokens", notificationHandler::uploadNotificationToken)
                         )
+                        .GET("", notificationHandler::inquiryNotificationList)
+                        .GET("/{notificationId}", notificationHandler::inquiryNotificationDetail)
                         .DELETE("/tokens/{tokenId}", notificationHandler::deleteNotificationToken)
                 )
                 .build();

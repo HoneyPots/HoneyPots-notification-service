@@ -1,11 +1,14 @@
 package com.honeypot.domain.notification.service;
 
+import com.honeypot.common.errors.exceptions.NotFoundException;
 import com.honeypot.domain.notification.dto.NotificationHistoryDto;
 import com.honeypot.domain.notification.entity.NotificationHistory;
 import com.honeypot.domain.notification.mapper.NotificationHistoryMapper;
 import com.honeypot.domain.notification.repository.NotificationHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -15,6 +18,21 @@ public class NotificationHistoryServiceImpl implements NotificationHistoryServic
     private final NotificationHistoryRepository notificationHistoryRepository;
 
     private final NotificationHistoryMapper notificationHistoryMapper;
+
+    @Override
+    public Mono<NotificationHistoryDto> findById(String historyId) {
+        return notificationHistoryRepository.findById(historyId)
+                .switchIfEmpty(Mono.error(
+                        new NotFoundException("There is no notification history [" + historyId + "]")
+                ))
+                .map(notificationHistoryMapper::toDto);
+    }
+
+    @Override
+    public Flux<NotificationHistoryDto> findByMemberId(Long memberId, Pageable pageable) {
+        return notificationHistoryRepository.findByMemberId(memberId, pageable)
+                .map(notificationHistoryMapper::toDto);
+    }
 
     @Override
     public Mono<NotificationHistoryDto> save(NotificationHistoryDto history) {
